@@ -1,16 +1,29 @@
-# myapp
+# Flutter UI Editor
 
-A new Flutter project.
+Це проєкт на Flutter, метою якого є створення візуального редактора користувацького інтерфейсу (UI), подібного до тих, що існують у великих ігрових рушіях.
 
-## Getting Started
+## Концепція та Структура
 
-This project is a starting point for a Flutter application.
+Редактор має багатопанельний інтерфейс для інтуїтивно зрозумілого створення та налаштування UI. На даному етапі реалізована базова структура, що включає:
 
-A few resources to get you started if this is your first Flutter project:
+-   **Панель інструментів (Toolbar):** Верхня панель для швидкого доступу до основних інструментів (наприклад, вибір, масштабування).
+-   **Ліва панель:**
+    -   **Палітра віджетів:** Список доступних для використання віджетів Flutter.
+    -   **Дерево віджетів:** Ієрархічне представлення всіх віджетів, що знаходяться на полотні.
+-   **Центральна область:**
+    -   **Полотно (Canvas):** Основна робоча зона, де відбувається візуальна побудова та редагування інтерфейсу.
+    -   **Консоль / Рядок стану:** Панель під полотном для виведення логів, помилок та іншої службової інформації.
+-   **Права панель (Інспектор властивостей):** Панель для перегляду та редагування властивостей вибраного віджета.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Початок роботи
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Цей проєкт є стартовою точкою для програми на Flutter.
+
+Декілька ресурсів, які допоможуть вам розпочати, якщо це ваш перший проєкт на Flutter:
+
+-   [Lab: Напишіть свій перший додаток на Flutter](https://docs.flutter.dev/get-started/codelab)
+-   [Cookbook: Корисні приклади Flutter](https://docs.flutter.dev/cookbook)
+
+Для отримання допомоги щодо початку роботи з розробкою на Flutter перегляньте
+[онлайн-документацію](https://docs.flutter.dev/), яка пропонує навчальні посібники,
+приклади, посібник з розробки для мобільних пристроїв та повний довідник API.
