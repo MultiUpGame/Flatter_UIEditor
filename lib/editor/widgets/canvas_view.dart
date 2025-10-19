@@ -43,14 +43,13 @@ class _CanvasViewState extends State<CanvasView> {
     }
   }
 
-  void _selectWidget(String? widgetId) {
+  void _selectWidget(String? widgetId, [CanvasWidgetData? data]) {
     setState(() {
       _selectedWidgetId = widgetId;
       if (widgetId == null) {
         widget.onWidgetSelected(null);
       } else {
-        final selectedWidget =
-            _canvasWidgets.firstWhere((w) => w.id == widgetId);
+        final selectedWidget = data ?? _canvasWidgets.firstWhere((w) => w.id == widgetId);
         widget.onWidgetSelected(selectedWidget);
       }
     });
@@ -81,7 +80,7 @@ class _CanvasViewState extends State<CanvasView> {
           setState(() {
             _canvasWidgets.add(newWidgetData);
           });
-          _selectWidget(newId);
+          _selectWidget(newId, newWidgetData);
         },
         builder: (context, candidateData, rejectedData) {
           return Container(
@@ -92,7 +91,7 @@ class _CanvasViewState extends State<CanvasView> {
             child: Stack(
               children: _canvasWidgets.map((widgetData) {
                 return DraggableItem(
-                  key: widgetData.key, // Передаємо ключ
+                  key: widgetData.key,
                   widgetData: widgetData,
                   isSelected: widgetData.id == _selectedWidgetId,
                   onTap: () {
@@ -102,12 +101,28 @@ class _CanvasViewState extends State<CanvasView> {
                     final RenderBox canvasBox = _canvasKey.currentContext!
                         .findRenderObject() as RenderBox;
                     final localPosition = canvasBox.globalToLocal(globalPosition);
+
+                    final index = _canvasWidgets.indexWhere((w) => w.id == widgetData.id);
+                    if (index == -1) return;
+
+                    // Створюємо НОВИЙ об'єкт, а не змінюємо старий
+                    final updatedData = CanvasWidgetData(
+                      id: widgetData.id,
+                      widget: widgetData.widget,
+                      position: localPosition, // Нова позиція
+                      size: widgetData.size,
+                      key: widgetData.key,
+                    );
+
                     setState(() {
-                      widgetData.position = localPosition;
+                      _canvasWidgets[index] = updatedData;
                     });
-                    // Оновлюємо дані у батьківському віджеті
-                    final updatedData = _canvasWidgets.firstWhere((w) => w.id == widgetData.id);
-                    widget.onWidgetSelected(updatedData);
+
+                    // Повідомляємо батьківський віджет про оновлені дані
+                    // щоб PropertiesInspector оновив свої поля
+                    if (_selectedWidgetId == widgetData.id) {
+                      widget.onWidgetSelected(updatedData);
+                    }
                   },
                 );
               }).toList(),
