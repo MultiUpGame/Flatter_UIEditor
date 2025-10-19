@@ -1,69 +1,40 @@
 
 import 'package:flutter/material.dart';
-import 'package:myapp/editor/canvas_widget_data.dart';
 
-// Віджет, який можна перетягувати та виділяти
+// Універсальний віджет для перетягування будь-якого вмісту (child)
 class DraggableItem extends StatelessWidget {
-  final CanvasWidgetData widgetData;
-  final bool isSelected;
+  final Offset position;
   final VoidCallback onTap;
   final Function(Offset) onDragEnd;
+  final Widget child;
 
   const DraggableItem({
     super.key,
-    required this.widgetData,
-    required this.isSelected,
+    required this.position,
     required this.onTap,
     required this.onDragEnd,
+    required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    final width = widgetData.size?.width;
-    final height = widgetData.size?.height;
-
     return Positioned(
-      left: widgetData.position.dx,
-      top: widgetData.position.dy,
-      child: Draggable<CanvasWidgetData>(
-        data: widgetData,
+      left: position.dx,
+      top: position.dy,
+      child: Draggable<String>( // Тепер передаємо просто String (id) 
+        // як дані для перетягування
+        data: key.toString(), // Використовуємо ключ як унікальний ідентифікатор
         feedback: Material(
           color: Colors.transparent,
-          child: SizedBox(
-            width: width,
-            height: height,
-            child: widgetData.widget,
-          ),
+          child: child,
         ),
         childWhenDragging: Container(),
         onDragEnd: (details) {
           onDragEnd(details.offset);
         },
-        // Основний вигляд віджета
         child: GestureDetector(
-          onTap: onTap, // Обробляємо клік для виділення
-          child: Stack(
-            children: [
-              // 1. Сам віджет у контейнері з розмірами
-              Container(
-                key: widgetData.key,
-                width: width,
-                height: height,
-                child: widgetData.widget,
-              ),
-              // 2. Рамка, що накладається поверх, якщо віджет виділено
-              if (isSelected)
-                Positioned.fill(
-                  child: IgnorePointer( // Робимо рамку "прозорою" для кліків
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.blueAccent, width: 2),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          onTap: onTap, // Обробка кліку для виділення
+          child: child, // Відображаємо переданий дочірній віджет
         ),
       ),
     );

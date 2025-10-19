@@ -29,33 +29,66 @@ class _CanvasViewState extends State<CanvasView> {
   final Random _random = Random();
   final GlobalKey _canvasKey = GlobalKey();
 
-  String? _selectedWidgetId;
-
-  @override
-  void didUpdateWidget(covariant CanvasView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.selectedWidgetData != null &&
-        widget.selectedWidgetData != oldWidget.selectedWidgetData) {
-      final index = widget.canvasWidgets
-          .indexWhere((w) => w.id == widget.selectedWidgetData!.id);
-      if (index != -1) {
-        setState(() {
-          widget.canvasWidgets[index] = widget.selectedWidgetData!;
-        });
-      }
-    }
+  void _selectWidget(CanvasWidgetData? widgetData) {
+    widget.onWidgetSelected(widgetData);
   }
 
-  void _selectWidget(String? widgetId, [CanvasWidgetData? data]) {
-    setState(() {
-      _selectedWidgetId = widgetId;
-      if (widgetId == null) {
-        widget.onWidgetSelected(null);
-      } else {
-        final selectedWidget = data ?? widget.canvasWidgets.firstWhere((w) => w.id == widgetId);
-        widget.onWidgetSelected(selectedWidget);
-      }
-    });
+  CanvasWidgetData? _findWidgetById(List<CanvasWidgetData> widgets, String id) {
+    for (var widget in widgets) {
+      if (widget.id == id) return widget;
+      final foundInChildren = _findWidgetById(widget.children, id);
+      if (foundInChildren != null) return foundInChildren;
+    }
+    return null;
+  }
+
+  // Рекурсивна функція для побудови UI віджетів
+  Widget _buildWidgetUI(CanvasWidgetData widgetData) {
+    Widget currentWidget;
+
+    final children = widgetData.children.map((child) => _buildWidgetUI(child)).toList();
+
+    if (widgetData.widget is Container) {
+      currentWidget = Container(
+        width: widgetData.size?.width,
+        height: widgetData.size?.height,
+        decoration: (widgetData.widget as Container).decoration,
+        child: children.isNotEmpty ? children.first : null,
+      );
+    } else if (widgetData.widget is Column) {
+      currentWidget = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: children,
+      );
+    } else if (widgetData.widget is Row) {
+      currentWidget = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: children,
+      );
+    } else {
+      currentWidget = SizedBox(
+        width: widgetData.size?.width,
+        height: widgetData.size?.height,
+        child: widgetData.widget,
+      );
+    }
+
+    final isSelected = widget.selectedWidgetData?.id == widgetData.id;
+
+    // Обгортаємо віджет у GestureDetector для виділення
+    return GestureDetector(
+      onTap: () {
+        _selectWidget(widgetData);
+      },
+      child: Container(
+        decoration: isSelected
+            ? BoxDecoration(
+                border: Border.all(color: Colors.blueAccent, width: 2),
+              )
+            : null,
+        child: currentWidget,
+      ),
+    );
   }
 
   @override
@@ -72,63 +105,55 @@ class _CanvasViewState extends State<CanvasView> {
           final newId = 'widget_${_random.nextInt(100000)}';
           final newWidget = createWidgetFromName((details.data as PaletteItem).name);
 
-          Color? initialColor;
-          if (newWidget is Container) {
-            final decoration = newWidget.decoration as BoxDecoration?;
-            initialColor = decoration?.color;
-          }
-
           final newWidgetData = CanvasWidgetData(
             id: newId,
             widget: newWidget,
             position: localPosition,
-            size: const Size(100, 50),
-            color: initialColor,
+            size: const Size(150, 100), // Змінив розмір за замовчуванням
             key: GlobalKey(),
           );
 
           final updatedWidgets = [...widget.canvasWidgets, newWidgetData];
           widget.onWidgetsUpdated(updatedWidgets);
-          _selectWidget(newId, newWidgetData);
+          _selectWidget(newWidgetData);
         },
         builder: (context, candidateData, rejectedData) {
           return Container(
             key: _canvasKey,
             color: candidateData.isNotEmpty
                 ? Colors.lightGreen[100]
-                : Colors.grey[200],
+                : Colors.grey[300],
             child: Stack(
               children: widget.canvasWidgets.map((widgetData) {
+                // Кожен віджет верхнього рівня є DraggableItem
                 return DraggableItem(
-                  key: widgetData.key,
-                  widgetData: widgetData,
-                  isSelected: widgetData.id == _selectedWidgetId,
-                  onTap: () {
-                    _selectWidget(widgetData.id);
-                  },
+                  key: ValueKey(widgetData.id),
+                  position: widgetData.position,
+                  onTap: () => _selectWidget(widgetData),
                   onDragEnd: (globalPosition) {
-                    final RenderBox canvasBox = _canvasKey.currentContext!
-                        .findRenderObject() as RenderBox;
+                    final RenderBox canvasBox =
+                        _canvasKey.currentContext!.findRenderObject() as RenderBox;
                     final localPosition = canvasBox.globalToLocal(globalPosition);
-
-                    final index = widget.canvasWidgets.indexWhere((w) => w.id == widgetData.id);
-                    if (index == -1) return;
 
                     final updatedData = CanvasWidgetData(
                       id: widgetData.id,
                       widget: widgetData.widget,
                       position: localPosition,
                       size: widgetData.size,
-                      color: widgetData.color, // Зберігаємо колір
                       key: widgetData.key,
+                      children: widgetData.children, // Зберігаємо дочірні
                     );
-                    
-                    final updatedWidgets = [...widget.canvasWidgets];
-                    updatedWidgets[index] = updatedData;
-                    widget.onWidgetsUpdated(updatedWidgets);
 
-                    _selectWidget(updatedData.id, updatedData);
+                    final index = widget.canvasWidgets.indexWhere((w) => w.id == widgetData.id);
+                    if(index != -1) {
+                      final updatedWidgets = [...widget.canvasWidgets];
+                      updatedWidgets[index] = updatedData;
+                      widget.onWidgetsUpdated(updatedWidgets);
+                      _selectWidget(updatedData);
+                    }
                   },
+                  // Передаємо рекурсивно збудований віджет
+                  child: _buildWidgetUI(widgetData),
                 );
               }).toList(),
             ),

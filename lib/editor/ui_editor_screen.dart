@@ -26,11 +26,8 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
 
   void _onWidgetUpdated(CanvasWidgetData updatedWidgetData) {
     setState(() {
-      final index = _canvasWidgets.indexWhere((w) => w.id == updatedWidgetData.id);
-      if (index != -1) {
-        _canvasWidgets[index] = updatedWidgetData;
-        _selectedWidgetData = updatedWidgetData;
-      }
+      _canvasWidgets = _updateWidgetInTree(_canvasWidgets, updatedWidgetData);
+      _selectedWidgetData = updatedWidgetData;
     });
   }
 
@@ -39,6 +36,94 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
       _canvasWidgets = updatedWidgets;
     });
   }
+
+  void _handleWidgetMove(String draggedItemId, String targetItemId) {
+    setState(() {
+      // 1. Знайти віджет, який перетягують
+      final draggedWidget = _findWidgetById(_canvasWidgets, draggedItemId);
+      if (draggedWidget == null) return;
+
+      // 2. Видалити його з попереднього місця
+      _canvasWidgets = _removeWidgetFromTree(_canvasWidgets, draggedItemId);
+
+      // 3. Додати його як дочірній до цільового віджета
+      _canvasWidgets = _addWidgetToTarget(_canvasWidgets, draggedWidget, targetItemId);
+    });
+  }
+
+  // --- Допоміжні функції для маніпулювання деревом віджетів ---
+
+  CanvasWidgetData? _findWidgetById(List<CanvasWidgetData> widgets, String id) {
+    for (var widget in widgets) {
+      if (widget.id == id) return widget;
+      final foundInChildren = _findWidgetById(widget.children, id);
+      if (foundInChildren != null) return foundInChildren;
+    }
+    return null;
+  }
+
+  List<CanvasWidgetData> _removeWidgetFromTree(List<CanvasWidgetData> widgets, String id) {
+    List<CanvasWidgetData> newWidgets = [];
+    for (var widget in widgets) {
+      if (widget.id != id) {
+        final newChildren = _removeWidgetFromTree(widget.children, id);
+        newWidgets.add(CanvasWidgetData(
+          id: widget.id,
+          widget: widget.widget,
+          position: widget.position,
+          size: widget.size,
+          color: widget.color,
+          key: widget.key,
+          children: newChildren,
+        ));
+      }
+    }
+    return newWidgets;
+  }
+
+  List<CanvasWidgetData> _addWidgetToTarget(List<CanvasWidgetData> widgets, CanvasWidgetData widgetToAdd, String targetId) {
+    return widgets.map((widget) {
+      if (widget.id == targetId) {
+        final newChildren = [...widget.children, widgetToAdd];
+        return CanvasWidgetData(
+          id: widget.id,
+          widget: widget.widget,
+          position: widget.position,
+          size: widget.size,
+          color: widget.color,
+          key: widget.key,
+          children: newChildren,
+        );
+      }
+      return CanvasWidgetData(
+        id: widget.id,
+        widget: widget.widget,
+        position: widget.position,
+        size: widget.size,
+        color: widget.color,
+        key: widget.key,
+        children: _addWidgetToTarget(widget.children, widgetToAdd, targetId),
+      );
+    }).toList();
+  }
+
+   List<CanvasWidgetData> _updateWidgetInTree(List<CanvasWidgetData> widgets, CanvasWidgetData widgetToUpdate) {
+    return widgets.map((widget) {
+      if (widget.id == widgetToUpdate.id) {
+        return widgetToUpdate;
+      }
+      return CanvasWidgetData(
+        id: widget.id,
+        widget: widget.widget,
+        position: widget.position,
+        size: widget.size,
+        color: widget.color,
+        key: widget.key,
+        children: _updateWidgetInTree(widget.children, widgetToUpdate),
+      );
+    }).toList();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -86,9 +171,10 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
                           widgets: _canvasWidgets,
                           selectedId: _selectedWidgetData?.id,
                           onSelected: (id) {
-                            final selected = _canvasWidgets.firstWhere((w) => w.id == id);
+                            final selected = _findWidgetById(_canvasWidgets, id);
                             _onWidgetSelected(selected);
                           },
+                          onWidgetMoved: _handleWidgetMove, // Додано обробник
                         ),
                       ),
                     ],
