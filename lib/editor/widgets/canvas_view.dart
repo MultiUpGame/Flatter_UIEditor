@@ -8,7 +8,9 @@ import 'package:myapp/editor/widgets/draggable_item.dart';
 import 'package:myapp/editor/widgets_palette_data.dart';
 
 class CanvasView extends StatefulWidget {
-  const CanvasView({super.key});
+  final Function(CanvasWidgetData?) onWidgetSelected;
+
+  const CanvasView({super.key, required this.onWidgetSelected});
 
   @override
   State<CanvasView> createState() => _CanvasViewState();
@@ -19,38 +21,42 @@ class _CanvasViewState extends State<CanvasView> {
   final Random _random = Random();
   final GlobalKey _canvasKey = GlobalKey();
 
-  String? _selectedWidgetId; // ID виділеного віджета
+  String? _selectedWidgetId;
 
-  void _clearSelection() {
-    if (_selectedWidgetId != null) {
-      setState(() {
-        _selectedWidgetId = null;
-      });
-    }
+  void _selectWidget(String? widgetId) {
+    setState(() {
+      _selectedWidgetId = widgetId;
+      if (widgetId == null) {
+        widget.onWidgetSelected(null);
+      } else {
+        final selectedWidget = _canvasWidgets.firstWhere((w) => w.id == widgetId);
+        widget.onWidgetSelected(selectedWidget);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: _clearSelection, // Знімаємо виділення по кліку на порожнє місце
+      onTap: () => _selectWidget(null),
       child: DragTarget<Object>(
         onWillAccept: (data) => data is PaletteItem,
         onAcceptWithDetails: (details) {
           final RenderBox canvasBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
           final localPosition = canvasBox.globalToLocal(details.offset);
 
+          final newId = 'widget_${_random.nextInt(100000)}';
+          final newWidgetData = CanvasWidgetData(
+            id: newId,
+            widget: createWidgetFromName((details.data as PaletteItem).name),
+            position: localPosition,
+            key: GlobalKey(),
+          );
+
           setState(() {
-            final newId = 'widget_${_random.nextInt(100000)}';
-            _canvasWidgets.add(
-              CanvasWidgetData(
-                id: newId,
-                widget: createWidgetFromName((details.data as PaletteItem).name),
-                position: localPosition,
-                key: GlobalKey(),
-              ),
-            );
-            _selectedWidgetId = newId; // Новий віджет одразу стає виділеним
+            _canvasWidgets.add(newWidgetData);
           });
+          _selectWidget(newId);
         },
         builder: (context, candidateData, rejectedData) {
           return Container(
@@ -62,17 +68,15 @@ class _CanvasViewState extends State<CanvasView> {
                   widgetData: widgetData,
                   isSelected: widgetData.id == _selectedWidgetId,
                   onTap: () {
-                    setState(() {
-                      _selectedWidgetId = widgetData.id;
-                    });
+                    _selectWidget(widgetData.id);
                   },
                   onDragEnd: (globalPosition) {
                     final RenderBox canvasBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
                     final localPosition = canvasBox.globalToLocal(globalPosition);
                     setState(() {
                       widgetData.position = localPosition;
-                      _selectedWidgetId = widgetData.id; // Робимо віджет виділеним після перетягування
                     });
+                    _selectWidget(widgetData.id);
                   },
                 );
               }).toList(),

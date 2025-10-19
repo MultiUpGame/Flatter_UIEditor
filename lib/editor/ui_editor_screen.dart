@@ -1,17 +1,29 @@
 
 import 'package:flutter/material.dart';
+import 'package:myapp/editor/canvas_widget_data.dart';
 import 'package:myapp/editor/widgets/canvas_view.dart';
 import 'package:myapp/editor/widgets/palette_category_view.dart';
+import 'package:myapp/editor/widgets/properties_inspector.dart';
 import 'package:myapp/editor/widgets_palette_data.dart';
 
-// Тепер це знову може бути простий StatelessWidget
-class UiEditorScreen extends StatelessWidget {
+class UiEditorScreen extends StatefulWidget {
   const UiEditorScreen({super.key});
 
   @override
+  State<UiEditorScreen> createState() => _UiEditorScreenState();
+}
+
+class _UiEditorScreenState extends State<UiEditorScreen> {
+  CanvasWidgetData? _selectedWidgetData;
+
+  void _onWidgetSelected(CanvasWidgetData? widgetData) {
+    setState(() {
+      _selectedWidgetData = widgetData;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Групуємо віджети для палітри. Ця логіка залишається тут,
-    // оскільки вона специфічна для побудови палітри.
     final Map<String, List<PaletteItem>> groupedWidgets = {};
     for (var item in widgetsPalette) {
       if (!groupedWidgets.containsKey(item.category)) {
@@ -30,7 +42,6 @@ class UiEditorScreen extends StatelessWidget {
           Expanded(
             child: Row(
               children: [
-                // Ліва колонка (Палітра та Дерево)
                 Container(
                   width: 200,
                   color: basePanelColor,
@@ -55,21 +66,26 @@ class UiEditorScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-
-                // Центральна колонка (Полотно та Консоль)
                 Expanded(
                   child: Column(
                     children: [
-                      // Ось і все! Замість купи коду - один віджет.
-                      const Expanded(child: CanvasView()),
+                      Expanded(
+                        child: CanvasView(
+                          onWidgetSelected: _onWidgetSelected, // Передаємо колбек
+                        ),
+                      ),
                       const Divider(height: 1),
                       Container(height: 100, color: Colors.black87, child: const Center(child: Text('Рядок стану / Консоль', style: TextStyle(color: Colors.white70)))),
                     ],
                   ),
                 ),
-
-                // Права панель (Інспектор властивостей)
-                Container(width: 200, color: basePanelColor, padding: const EdgeInsets.all(8.0), child: const Center(child: Text('Інспектор властивостей'))),
+                Container(
+                  width: 200,
+                  color: basePanelColor,
+                  child: PropertiesInspector(
+                    selectedWidgetData: _selectedWidgetData, // Передаємо дані
+                  ),
+                ),
               ],
             ),
           ),
