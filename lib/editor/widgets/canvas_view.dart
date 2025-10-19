@@ -69,11 +69,18 @@ class _CanvasViewState extends State<CanvasView> {
           final newId = 'widget_${_random.nextInt(100000)}';
           final newWidget = createWidgetFromName((details.data as PaletteItem).name);
 
+          Color? initialColor;
+          if (newWidget is Container) {
+            final decoration = newWidget.decoration as BoxDecoration?;
+            initialColor = decoration?.color;
+          }
+
           final newWidgetData = CanvasWidgetData(
             id: newId,
             widget: newWidget,
             position: localPosition,
-            size: const Size(100, 50), // Встановлюємо розмір за замовчуванням
+            size: const Size(100, 50),
+            color: initialColor,
             key: GlobalKey(),
           );
 
@@ -105,21 +112,19 @@ class _CanvasViewState extends State<CanvasView> {
                     final index = _canvasWidgets.indexWhere((w) => w.id == widgetData.id);
                     if (index == -1) return;
 
-                    // Створюємо НОВИЙ об'єкт з оновленою позицією
                     final updatedData = CanvasWidgetData(
                       id: widgetData.id,
                       widget: widgetData.widget,
                       position: localPosition,
                       size: widgetData.size,
+                      color: widgetData.color, // Зберігаємо колір
                       key: widgetData.key,
                     );
                     
-                    // Оновлюємо список віджетів
                     setState(() {
                       _canvasWidgets[index] = updatedData;
                     });
 
-                    // **ОСЬ ВИРІШЕННЯ:** Автоматично виділяємо віджет після перетягування
                     _selectWidget(updatedData.id, updatedData);
                   },
                 );

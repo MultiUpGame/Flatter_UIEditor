@@ -6,12 +6,10 @@ import 'package:flutter/material.dart';
 Widget createWidgetFromName(String name) {
   switch (name) {
     case 'Container':
-      // Додамо трохи стилю, щоб нові віджети було видно
+      // Тепер контейнер не має фіксованого розміру
       return Container(
-        width: 100,
-        height: 100,
         decoration: BoxDecoration(
-          color: Colors.blue[100],
+          color: Colors.blue[100], 
           border: Border.all(color: Colors.blue[800]!),
         ),
         child: const Center(child: Text('Container')),

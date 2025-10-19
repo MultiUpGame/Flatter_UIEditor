@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:myapp/editor/canvas_widget_data.dart';
 
 class PropertiesInspector extends StatefulWidget {
@@ -22,6 +23,8 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
   late TextEditingController _yController;
   late TextEditingController _widthController;
   late TextEditingController _heightController;
+
+  Color? _currentColor;
 
   @override
   void initState() {
@@ -49,6 +52,7 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
       _yController.text = data.position.dy.toStringAsFixed(2);
       _widthController.text = data.size?.width.toStringAsFixed(2) ?? '';
       _heightController.text = data.size?.height.toStringAsFixed(2) ?? '';
+      _currentColor = data.color;
 
       if (data.widget is Text) {
         _textController.text = (data.widget as Text).data ?? '';
@@ -61,7 +65,9 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
       _yController.clear();
       _widthController.clear();
       _heightController.clear();
+      _currentColor = null;
     }
+    setState(() {});
   }
 
   @override
@@ -74,7 +80,7 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
     super.dispose();
   }
 
-  void _updateWidget() {
+  void _updateWidget({Color? newColor}) {
     final currentData = widget.selectedWidgetData;
     if (currentData == null) return;
 
@@ -87,7 +93,15 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
     final newSize = (width != null && height != null) ? Size(width, height) : currentData.size;
     
     Widget updatedInternalWidget = currentData.widget;
-    if (currentData.widget is Text) {
+    final finalColor = newColor ?? _currentColor;
+
+    if (currentData.widget is Container) {
+        final existingDecoration = (currentData.widget as Container).decoration as BoxDecoration?;
+        updatedInternalWidget = Container(
+            decoration: existingDecoration?.copyWith(color: finalColor) ?? BoxDecoration(color: finalColor),
+            child: (currentData.widget as Container).child,
+        );
+    } else if (currentData.widget is Text) {
         final newText = _textController.text;
         if (newText != (currentData.widget as Text).data) {
             updatedInternalWidget = Text(newText, style: (currentData.widget as Text).style);
@@ -99,11 +113,35 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
       widget: updatedInternalWidget,
       position: newPosition,
       size: newSize,
+      color: finalColor,
       key: currentData.key,
     );
     widget.onWidgetUpdated(updatedData);
   }
   
+  void _showColorPicker() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pick a color!'),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: _currentColor ?? Colors.blue,
+            onColorChanged: (color) => setState(() => _currentColor = color),
+          ),
+        ),
+        actions: <Widget>[
+          ElevatedButton(
+            child: const Text('Done'),
+            onPressed: () {
+              _updateWidget(newColor: _currentColor);
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -188,6 +226,21 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
                 ),
                 onSubmitted: (_) => _updateWidget(),
               ),
+          ],
+          if (widget.selectedWidgetData!.widget is Container) ...[
+            const Text('Color', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _showColorPicker,
+              child: Container(
+                height: 50,
+                decoration: BoxDecoration(
+                  color: _currentColor,
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            )
           ]
         ],
       ),
