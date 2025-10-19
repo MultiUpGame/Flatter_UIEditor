@@ -233,11 +233,12 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
             GestureDetector(
               onTap: _showColorPicker,
               child: Container(
+                width: 50,
                 height: 50,
                 decoration: BoxDecoration(
                   color: _currentColor,
+                  shape: BoxShape.circle, // Ось тут ми робимо коло
                   border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
             )
