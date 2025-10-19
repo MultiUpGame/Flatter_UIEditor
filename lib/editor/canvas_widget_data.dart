@@ -8,6 +8,7 @@ class CanvasWidgetData {
   Size? size;
   Color? color;
   final GlobalKey key;
+  final List<CanvasWidgetData> children;
 
   CanvasWidgetData({
     required this.id,
@@ -16,5 +17,6 @@ class CanvasWidgetData {
     this.size,
     this.color,
     required this.key,
+    this.children = const [],
   });
 }

@@ -10,10 +10,14 @@ import 'package:myapp/editor/widgets_palette_data.dart';
 class CanvasView extends StatefulWidget {
   final Function(CanvasWidgetData?) onWidgetSelected;
   final CanvasWidgetData? selectedWidgetData;
+  final List<CanvasWidgetData> canvasWidgets;
+  final Function(List<CanvasWidgetData>) onWidgetsUpdated;
 
   const CanvasView({
     super.key,
     required this.onWidgetSelected,
+    required this.canvasWidgets,
+    required this.onWidgetsUpdated,
     this.selectedWidgetData,
   });
 
@@ -22,7 +26,6 @@ class CanvasView extends StatefulWidget {
 }
 
 class _CanvasViewState extends State<CanvasView> {
-  final List<CanvasWidgetData> _canvasWidgets = [];
   final Random _random = Random();
   final GlobalKey _canvasKey = GlobalKey();
 
@@ -33,11 +36,11 @@ class _CanvasViewState extends State<CanvasView> {
     super.didUpdateWidget(oldWidget);
     if (widget.selectedWidgetData != null &&
         widget.selectedWidgetData != oldWidget.selectedWidgetData) {
-      final index = _canvasWidgets
+      final index = widget.canvasWidgets
           .indexWhere((w) => w.id == widget.selectedWidgetData!.id);
       if (index != -1) {
         setState(() {
-          _canvasWidgets[index] = widget.selectedWidgetData!;
+          widget.canvasWidgets[index] = widget.selectedWidgetData!;
         });
       }
     }
@@ -49,7 +52,7 @@ class _CanvasViewState extends State<CanvasView> {
       if (widgetId == null) {
         widget.onWidgetSelected(null);
       } else {
-        final selectedWidget = data ?? _canvasWidgets.firstWhere((w) => w.id == widgetId);
+        final selectedWidget = data ?? widget.canvasWidgets.firstWhere((w) => w.id == widgetId);
         widget.onWidgetSelected(selectedWidget);
       }
     });
@@ -84,9 +87,8 @@ class _CanvasViewState extends State<CanvasView> {
             key: GlobalKey(),
           );
 
-          setState(() {
-            _canvasWidgets.add(newWidgetData);
-          });
+          final updatedWidgets = [...widget.canvasWidgets, newWidgetData];
+          widget.onWidgetsUpdated(updatedWidgets);
           _selectWidget(newId, newWidgetData);
         },
         builder: (context, candidateData, rejectedData) {
@@ -96,7 +98,7 @@ class _CanvasViewState extends State<CanvasView> {
                 ? Colors.lightGreen[100]
                 : Colors.grey[200],
             child: Stack(
-              children: _canvasWidgets.map((widgetData) {
+              children: widget.canvasWidgets.map((widgetData) {
                 return DraggableItem(
                   key: widgetData.key,
                   widgetData: widgetData,
@@ -109,7 +111,7 @@ class _CanvasViewState extends State<CanvasView> {
                         .findRenderObject() as RenderBox;
                     final localPosition = canvasBox.globalToLocal(globalPosition);
 
-                    final index = _canvasWidgets.indexWhere((w) => w.id == widgetData.id);
+                    final index = widget.canvasWidgets.indexWhere((w) => w.id == widgetData.id);
                     if (index == -1) return;
 
                     final updatedData = CanvasWidgetData(
@@ -121,9 +123,9 @@ class _CanvasViewState extends State<CanvasView> {
                       key: widgetData.key,
                     );
                     
-                    setState(() {
-                      _canvasWidgets[index] = updatedData;
-                    });
+                    final updatedWidgets = [...widget.canvasWidgets];
+                    updatedWidgets[index] = updatedData;
+                    widget.onWidgetsUpdated(updatedWidgets);
 
                     _selectWidget(updatedData.id, updatedData);
                   },

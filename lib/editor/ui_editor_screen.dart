@@ -4,6 +4,7 @@ import 'package:myapp/editor/canvas_widget_data.dart';
 import 'package:myapp/editor/widgets/canvas_view.dart';
 import 'package:myapp/editor/widgets/palette_category_view.dart';
 import 'package:myapp/editor/widgets/properties_inspector.dart';
+import 'package:myapp/editor/widgets/widget_tree_view.dart';
 import 'package:myapp/editor/widgets_palette_data.dart';
 
 class UiEditorScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class UiEditorScreen extends StatefulWidget {
 
 class _UiEditorScreenState extends State<UiEditorScreen> {
   CanvasWidgetData? _selectedWidgetData;
+  List<CanvasWidgetData> _canvasWidgets = [];
 
   void _onWidgetSelected(CanvasWidgetData? widgetData) {
     setState(() {
@@ -24,7 +26,17 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
 
   void _onWidgetUpdated(CanvasWidgetData updatedWidgetData) {
     setState(() {
-      _selectedWidgetData = updatedWidgetData;
+      final index = _canvasWidgets.indexWhere((w) => w.id == updatedWidgetData.id);
+      if (index != -1) {
+        _canvasWidgets[index] = updatedWidgetData;
+        _selectedWidgetData = updatedWidgetData;
+      }
+    });
+  }
+
+  void _onWidgetsUpdated(List<CanvasWidgetData> updatedWidgets) {
+    setState(() {
+      _canvasWidgets = updatedWidgets;
     });
   }
 
@@ -68,7 +80,17 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
                         ),
                       ),
                       const Divider(height: 1),
-                      Expanded(flex: 3, child: Container(padding: const EdgeInsets.all(8.0), color: Colors.grey[300], child: const Center(child: Text('Дерево віджетів')))),
+                      Expanded(
+                        flex: 3,
+                        child: WidgetTreeView(
+                          widgets: _canvasWidgets,
+                          selectedId: _selectedWidgetData?.id,
+                          onSelected: (id) {
+                            final selected = _canvasWidgets.firstWhere((w) => w.id == id);
+                            _onWidgetSelected(selected);
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -79,6 +101,8 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
                         child: CanvasView(
                           onWidgetSelected: _onWidgetSelected,
                           selectedWidgetData: _selectedWidgetData,
+                          canvasWidgets: _canvasWidgets,
+                          onWidgetsUpdated: _onWidgetsUpdated,
                         ),
                       ),
                       const Divider(height: 1),
