@@ -17,36 +17,86 @@ class PropertiesInspector extends StatefulWidget {
 }
 
 class _PropertiesInspectorState extends State<PropertiesInspector> {
-  late TextEditingController _textEditingController;
+  late TextEditingController _textController;
+  late TextEditingController _xController;
+  late TextEditingController _yController;
 
   @override
   void initState() {
     super.initState();
-    _textEditingController = TextEditingController();
-    _updateTextController();
+    _textController = TextEditingController();
+    _xController = TextEditingController();
+    _yController = TextEditingController();
+    _updateControllers();
   }
 
   @override
   void didUpdateWidget(covariant PropertiesInspector oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.selectedWidgetData != oldWidget.selectedWidgetData) {
-      _updateTextController();
+      _updateControllers();
     }
   }
 
-  void _updateTextController() {
-    if (widget.selectedWidgetData != null && widget.selectedWidgetData!.widget is Text) {
-      final textValue = (widget.selectedWidgetData!.widget as Text).data ?? '';
-      _textEditingController.text = textValue;
+  void _updateControllers() {
+    if (widget.selectedWidgetData != null) {
+      // Оновлюємо контролери позиції
+      _xController.text = widget.selectedWidgetData!.position.dx.toStringAsFixed(2);
+      _yController.text = widget.selectedWidgetData!.position.dy.toStringAsFixed(2);
+
+      // Оновлюємо контролер тексту, якщо це Text віджет
+      if (widget.selectedWidgetData!.widget is Text) {
+        final textValue = (widget.selectedWidgetData!.widget as Text).data ?? '';
+        _textController.text = textValue;
+      } else {
+        _textController.clear();
+      }
     } else {
-      _textEditingController.clear();
+      _textController.clear();
+      _xController.clear();
+      _yController.clear();
     }
   }
 
   @override
   void dispose() {
-    _textEditingController.dispose();
+    _textController.dispose();
+    _xController.dispose();
+    _yController.dispose();
     super.dispose();
+  }
+
+  void _updatePosition() {
+    final currentData = widget.selectedWidgetData;
+    if (currentData == null) return;
+
+    final dx = double.tryParse(_xController.text) ?? currentData.position.dx;
+    final dy = double.tryParse(_yController.text) ?? currentData.position.dy;
+    final newPosition = Offset(dx, dy);
+
+    if (newPosition != currentData.position) {
+      final updatedData = CanvasWidgetData(
+        id: currentData.id,
+        widget: currentData.widget,
+        position: newPosition,
+        key: currentData.key,
+      );
+      widget.onWidgetUpdated(updatedData);
+    }
+  }
+  
+  void _updateText(String newText) {
+      final currentData = widget.selectedWidgetData;
+      if (currentData == null || currentData.widget is! Text) return;
+
+      final updatedWidget = Text(newText, style: (currentData.widget as Text).style);
+      final updatedData = CanvasWidgetData(
+          id: currentData.id,
+          widget: updatedWidget,
+          position: currentData.position,
+          key: currentData.key,
+      );
+      widget.onWidgetUpdated(updatedData);
   }
 
   @override
@@ -69,26 +119,47 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
           const Text('Properties', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           Text('Type: ${widget.selectedWidgetData!.widget.runtimeType}'),
+          const SizedBox(height: 16),
+          
+          // --- Position Fields ---
+          const Text('Position', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          if (widget.selectedWidgetData!.widget is Text)
-            TextField(
-              controller: _textEditingController,
-              decoration: const InputDecoration(
-                labelText: 'Text',
-                border: OutlineInputBorder(),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _xController,
+                  decoration: const InputDecoration(labelText: 'X', border: OutlineInputBorder()),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  onSubmitted: (_) => _updatePosition(),
+                ),
               ),
-              onSubmitted: (newText) {
-                final currentWidget = widget.selectedWidgetData!;
-                final updatedWidget = Text(newText, style: (currentWidget.widget as Text).style);
-                final updatedData = CanvasWidgetData(
-                  id: currentWidget.id,
-                  widget: updatedWidget,
-                  position: currentWidget.position,
-                  key: currentWidget.key,
-                );
-                widget.onWidgetUpdated(updatedData);
-              },
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _yController,
+                  decoration: const InputDecoration(labelText: 'Y', border: OutlineInputBorder()),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                   onSubmitted: (_) => _updatePosition(),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // --- Text Field (if applicable) ---
+          if (widget.selectedWidgetData!.widget is Text) ...[
+             const Text('Text Content', style: TextStyle(fontWeight: FontWeight.w600)),
+             const SizedBox(height: 8),
+             TextField(
+                controller: _textController,
+                decoration: const InputDecoration(
+                  labelText: 'Text',
+                  border: OutlineInputBorder(),
+                ),
+                onSubmitted: _updateText,
+              ),
+          ]
         ],
       ),
     );
