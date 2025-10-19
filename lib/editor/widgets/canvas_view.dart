@@ -105,24 +105,22 @@ class _CanvasViewState extends State<CanvasView> {
                     final index = _canvasWidgets.indexWhere((w) => w.id == widgetData.id);
                     if (index == -1) return;
 
-                    // Створюємо НОВИЙ об'єкт, а не змінюємо старий
+                    // Створюємо НОВИЙ об'єкт з оновленою позицією
                     final updatedData = CanvasWidgetData(
                       id: widgetData.id,
                       widget: widgetData.widget,
-                      position: localPosition, // Нова позиція
+                      position: localPosition,
                       size: widgetData.size,
                       key: widgetData.key,
                     );
-
+                    
+                    // Оновлюємо список віджетів
                     setState(() {
                       _canvasWidgets[index] = updatedData;
                     });
 
-                    // Повідомляємо батьківський віджет про оновлені дані
-                    // щоб PropertiesInspector оновив свої поля
-                    if (_selectedWidgetId == widgetData.id) {
-                      widget.onWidgetSelected(updatedData);
-                    }
+                    // **ОСЬ ВИРІШЕННЯ:** Автоматично виділяємо віджет після перетягування
+                    _selectWidget(updatedData.id, updatedData);
                   },
                 );
               }).toList(),
