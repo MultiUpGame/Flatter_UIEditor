@@ -20,6 +20,8 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
   late TextEditingController _textController;
   late TextEditingController _xController;
   late TextEditingController _yController;
+  late TextEditingController _widthController;
+  late TextEditingController _heightController;
 
   @override
   void initState() {
@@ -27,6 +29,8 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
     _textController = TextEditingController();
     _xController = TextEditingController();
     _yController = TextEditingController();
+    _widthController = TextEditingController();
+    _heightController = TextEditingController();
     _updateControllers();
   }
 
@@ -40,14 +44,14 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
 
   void _updateControllers() {
     if (widget.selectedWidgetData != null) {
-      // Оновлюємо контролери позиції
-      _xController.text = widget.selectedWidgetData!.position.dx.toStringAsFixed(2);
-      _yController.text = widget.selectedWidgetData!.position.dy.toStringAsFixed(2);
+      final data = widget.selectedWidgetData!;
+      _xController.text = data.position.dx.toStringAsFixed(2);
+      _yController.text = data.position.dy.toStringAsFixed(2);
+      _widthController.text = data.size?.width.toStringAsFixed(2) ?? '';
+      _heightController.text = data.size?.height.toStringAsFixed(2) ?? '';
 
-      // Оновлюємо контролер тексту, якщо це Text віджет
-      if (widget.selectedWidgetData!.widget is Text) {
-        final textValue = (widget.selectedWidgetData!.widget as Text).data ?? '';
-        _textController.text = textValue;
+      if (data.widget is Text) {
+        _textController.text = (data.widget as Text).data ?? '';
       } else {
         _textController.clear();
       }
@@ -55,6 +59,8 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
       _textController.clear();
       _xController.clear();
       _yController.clear();
+      _widthController.clear();
+      _heightController.clear();
     }
   }
 
@@ -63,10 +69,12 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
     _textController.dispose();
     _xController.dispose();
     _yController.dispose();
+    _widthController.dispose();
+    _heightController.dispose();
     super.dispose();
   }
 
-  void _updatePosition() {
+  void _updateWidget() {
     final currentData = widget.selectedWidgetData;
     if (currentData == null) return;
 
@@ -74,30 +82,28 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
     final dy = double.tryParse(_yController.text) ?? currentData.position.dy;
     final newPosition = Offset(dx, dy);
 
-    if (newPosition != currentData.position) {
-      final updatedData = CanvasWidgetData(
-        id: currentData.id,
-        widget: currentData.widget,
-        position: newPosition,
-        key: currentData.key,
-      );
-      widget.onWidgetUpdated(updatedData);
+    final width = double.tryParse(_widthController.text);
+    final height = double.tryParse(_heightController.text);
+    final newSize = (width != null && height != null) ? Size(width, height) : currentData.size;
+    
+    Widget updatedInternalWidget = currentData.widget;
+    if (currentData.widget is Text) {
+        final newText = _textController.text;
+        if (newText != (currentData.widget as Text).data) {
+            updatedInternalWidget = Text(newText, style: (currentData.widget as Text).style);
+        }
     }
+
+    final updatedData = CanvasWidgetData(
+      id: currentData.id,
+      widget: updatedInternalWidget,
+      position: newPosition,
+      size: newSize,
+      key: currentData.key,
+    );
+    widget.onWidgetUpdated(updatedData);
   }
   
-  void _updateText(String newText) {
-      final currentData = widget.selectedWidgetData;
-      if (currentData == null || currentData.widget is! Text) return;
-
-      final updatedWidget = Text(newText, style: (currentData.widget as Text).style);
-      final updatedData = CanvasWidgetData(
-          id: currentData.id,
-          widget: updatedWidget,
-          position: currentData.position,
-          key: currentData.key,
-      );
-      widget.onWidgetUpdated(updatedData);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +127,6 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
           Text('Type: ${widget.selectedWidgetData!.widget.runtimeType}'),
           const SizedBox(height: 16),
           
-          // --- Position Fields ---
           const Text('Position', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Row(
@@ -131,7 +136,7 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
                   controller: _xController,
                   decoration: const InputDecoration(labelText: 'X', border: OutlineInputBorder()),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onSubmitted: (_) => _updatePosition(),
+                  onSubmitted: (_) => _updateWidget(),
                 ),
               ),
               const SizedBox(width: 8),
@@ -140,14 +145,38 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
                   controller: _yController,
                   decoration: const InputDecoration(labelText: 'Y', border: OutlineInputBorder()),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                   onSubmitted: (_) => _updatePosition(),
+                   onSubmitted: (_) => _updateWidget(),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // --- Text Field (if applicable) ---
+          const Text('Size', style: TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _widthController,
+                  decoration: const InputDecoration(labelText: 'Width', border: OutlineInputBorder()),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  onSubmitted: (_) => _updateWidget(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _heightController,
+                  decoration: const InputDecoration(labelText: 'Height', border: OutlineInputBorder()),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                   onSubmitted: (_) => _updateWidget(),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
           if (widget.selectedWidgetData!.widget is Text) ...[
              const Text('Text Content', style: TextStyle(fontWeight: FontWeight.w600)),
              const SizedBox(height: 8),
@@ -157,7 +186,7 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
                   labelText: 'Text',
                   border: OutlineInputBorder(),
                 ),
-                onSubmitted: _updateText,
+                onSubmitted: (_) => _updateWidget(),
               ),
           ]
         ],

@@ -19,6 +19,9 @@ class DraggableItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width = widgetData.size?.width;
+    final height = widgetData.size?.height;
+
     return Positioned(
       left: widgetData.position.dx,
       top: widgetData.position.dy,
@@ -26,7 +29,11 @@ class DraggableItem extends StatelessWidget {
         data: widgetData,
         feedback: Material(
           color: Colors.transparent,
-          child: widgetData.widget,
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: widgetData.widget,
+          ),
         ),
         childWhenDragging: Container(),
         onDragEnd: (details) {
@@ -36,11 +43,12 @@ class DraggableItem extends StatelessWidget {
         child: GestureDetector(
           onTap: onTap, // Обробляємо клік для виділення
           child: Stack(
-            // Stack дозволяє накладати віджети один на одного
             children: [
-              // 1. Сам віджет
+              // 1. Сам віджет у контейнері з розмірами
               Container(
                 key: widgetData.key,
+                width: width,
+                height: height,
                 child: widgetData.widget,
               ),
               // 2. Рамка, що накладається поверх, якщо віджет виділено

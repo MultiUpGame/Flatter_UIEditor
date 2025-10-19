@@ -1,17 +1,18 @@
 
 import 'package:flutter/material.dart';
 
-// Модель для віджета на полотні
 class CanvasWidgetData {
-  final String id; // Унікальний ID
-  final Widget widget; // Сам віджет
-  Offset position; // Позиція на полотні
-  final GlobalKey key; // Ключ для отримання розміру
+  final String id;
+  final Widget widget;
+  Offset position;
+  Size? size; // Додано поле для розміру
+  final GlobalKey key;
 
   CanvasWidgetData({
-    required this.id, 
-    required this.widget, 
-    required this.position, 
-    required this.key
+    required this.id,
+    required this.widget,
+    required this.position,
+    this.size, // Додано в конструктор
+    required this.key,
   });
 }

@@ -68,10 +68,13 @@ class _CanvasViewState extends State<CanvasView> {
           final localPosition = canvasBox.globalToLocal(details.offset);
 
           final newId = 'widget_${_random.nextInt(100000)}';
+          final newWidget = createWidgetFromName((details.data as PaletteItem).name);
+
           final newWidgetData = CanvasWidgetData(
             id: newId,
-            widget: createWidgetFromName((details.data as PaletteItem).name),
+            widget: newWidget,
             position: localPosition,
+            size: const Size(100, 50), // Встановлюємо розмір за замовчуванням
             key: GlobalKey(),
           );
 
@@ -89,6 +92,7 @@ class _CanvasViewState extends State<CanvasView> {
             child: Stack(
               children: _canvasWidgets.map((widgetData) {
                 return DraggableItem(
+                  key: widgetData.key, // Передаємо ключ
                   widgetData: widgetData,
                   isSelected: widgetData.id == _selectedWidgetId,
                   onTap: () {
@@ -101,7 +105,9 @@ class _CanvasViewState extends State<CanvasView> {
                     setState(() {
                       widgetData.position = localPosition;
                     });
-                    _selectWidget(widgetData.id);
+                    // Оновлюємо дані у батьківському віджеті
+                    final updatedData = _canvasWidgets.firstWhere((w) => w.id == widgetData.id);
+                    widget.onWidgetSelected(updatedData);
                   },
                 );
               }).toList(),
