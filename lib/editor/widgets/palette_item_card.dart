@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:myapp/editor/widget_factory.dart';
 import 'package:myapp/editor/widgets_palette_data.dart';
 
 // Віджет для одного елемента в палітрі
@@ -15,16 +16,12 @@ class PaletteItemCard extends StatelessWidget {
       data: item, // Дані, що перетягуються
       // Віджет, який видно під курсором під час перетягування
       feedback: Material(
-        elevation: 4.0,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          color: Colors.blueAccent,
-          child: Text(item.name, style: const TextStyle(color: Colors.white, fontSize: 12)),
-        ),
+        color: Colors.transparent,
+        child: createWidgetFromName(item.name),
       ),
       // Оригінальний віджет у списку
       child: InkWell(
-        onTap: () { 
+        onTap: () {
           // Поки що нічого не робимо, але залишаємо для майбутнього
         },
         child: SizedBox(
