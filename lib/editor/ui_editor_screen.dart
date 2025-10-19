@@ -22,6 +22,12 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
     });
   }
 
+  void _onWidgetUpdated(CanvasWidgetData updatedWidgetData) {
+    setState(() {
+      _selectedWidgetData = updatedWidgetData;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final Map<String, List<PaletteItem>> groupedWidgets = {};
@@ -71,7 +77,8 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
                     children: [
                       Expanded(
                         child: CanvasView(
-                          onWidgetSelected: _onWidgetSelected, // Передаємо колбек
+                          onWidgetSelected: _onWidgetSelected,
+                          selectedWidgetData: _selectedWidgetData,
                         ),
                       ),
                       const Divider(height: 1),
@@ -83,7 +90,8 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
                   width: 200,
                   color: basePanelColor,
                   child: PropertiesInspector(
-                    selectedWidgetData: _selectedWidgetData, // Передаємо дані
+                    selectedWidgetData: _selectedWidgetData,
+                    onWidgetUpdated: _onWidgetUpdated,
                   ),
                 ),
               ],
