@@ -4,11 +4,10 @@ import '../editor/canvas_widget_data.dart';
 /// Відповідає за генерацію Dart коду на основі візуального представлення.
 class CodeGenerator {
   /// Генерує повний код для екрану на основі списку віджетів на полотні.
-  ///
-  /// Цей метод створює код для Scaffold, що містить Stack з усіма віджетами,
-  /// кожен з яких обгорнутий у Positioned для точного позиціонування.
   String generateScreenCode(List<CanvasWidgetData> widgets, {String screenName = 'MyGeneratedScreen'}) {
-    final String widgetsCode = _generateWidgetsCode(widgets);
+    // Ми генеруємо код тільки для віджетів верхнього рівня (без батьків)
+    final topLevelWidgets = widgets.where((w) => w.parentId == null).toList();
+    final String widgetsCode = _generateWidgetsCode(topLevelWidgets);
 
     return '''
 import 'package:flutter/material.dart';
@@ -33,68 +32,91 @@ $widgetsCode
 ''';
   }
 
-  /// Генерує код для списку віджетів.
+  /// Генерує код для списку віджетів, що позиціонуються на полотні.
   String _generateWidgetsCode(List<CanvasWidgetData> widgets) {
     final buffer = StringBuffer();
     for (final widgetData in widgets) {
-      buffer.writeln(_generateSingleWidgetCode(widgetData));
-    }
-    return buffer.toString();
-  }
-
-  /// Генерує код для одного віджета, враховуючи його позицію та властивості.
-  String _generateSingleWidgetCode(CanvasWidgetData widgetData) {
-    final widgetCode = _buildWidget(widgetData);
-
-    // Форматуємо код з відступами для кращої читабельності
-    return '''
+      final widgetCode = _buildWidget(widgetData);
+      // Кожен віджет верхнього рівня обгортаємо в Positioned
+      buffer.writeln('''
           Positioned(
             left: ${widgetData.position.dx.toStringAsFixed(1)},
             top: ${widgetData.position.dy.toStringAsFixed(1)},
             child: ${widgetCode.trim()},
-          ),''';
+          ),''');
+    }
+    return buffer.toString();
   }
 
-  /// Створює рядок коду для конкретного віджета на основі його даних.
-  /// Аналогічно до `WidgetFactory`, але генерує код, а не віджети.
+  /// Рекурсивно створює рядок коду для конкретного віджета та його дочірніх елементів.
   String _buildWidget(CanvasWidgetData data) {
-    // TODO: Розширити для підтримки властивостей з data.properties
-    
-    // Використовуємо тип віджета для ідентифікації
     final widgetType = data.widget.runtimeType.toString();
-    
-    // Задаємо розміри за замовчуванням, якщо вони не визначені
-    final width = data.size?.width.toStringAsFixed(1) ?? '150.0';
-    final height = data.size?.height.toStringAsFixed(1) ?? '100.0';
+    final width = data.size?.width.toStringAsFixed(1);
+    final height = data.size?.height.toStringAsFixed(1);
+
+    // Рекурсивно генеруємо код для дочірніх віджетів
+    final childrenCode = data.childWidgets.map((child) => _buildWidget(child)).join(',\n');
+
+    String widgetCode;
 
     switch (widgetType) {
       case 'Container':
-        return '''
+        final container = data.widget as Container;
+        final decoration = container.decoration as BoxDecoration?;
+        final colorCode = _getColorCode(decoration?.color);
+        final childCode = data.childWidgets.isNotEmpty ? 'child: ${_buildWidget(data.childWidgets.first)}' : 'child: const Center(child: Text(\'Container\'))';
+
+        widgetCode = '''
 Container(
-              width: $width,
-              height: $height,
               decoration: BoxDecoration(
-                color: Colors.blue[100],
+                color: $colorCode,
                 border: Border.all(color: Colors.blue[800]!),
               ),
-              child: const Center(child: Text('Container')),
+              $childCode,
             )''';
+        break;
+
       case 'Text':
-        return "const Text('Новий текстовий віджет', style: TextStyle(fontSize: 16))";
+        final textWidget = data.widget as Text;
+        widgetCode = "Text('${textWidget.data}', style: const TextStyle(fontSize: 16))";
+        break;
+
       case 'Column':
-        return '''
-const Column(
+        widgetCode = '''
+Column(
               mainAxisSize: MainAxisSize.min,
-              children: [Text('Елемент 1'), SizedBox(height: 8), Text('Елемент 2')],
+              children: [$childrenCode],
             )''';
+        break;
+
       case 'Row':
-        return '''
-const Row(
+        widgetCode = '''
+Row(
               mainAxisSize: MainAxisSize.min,
-              children: [Text('Елемент 1'), SizedBox(width: 8), Text('Елемент 2')],
+              children: [$childrenCode],
             )''';
+        break;
+
       default:
-        return "const SizedBox.shrink()"; // Повертаємо "пусте" місце для невідомих віджетів
+        widgetCode = "const SizedBox.shrink()";
+        break;
     }
+
+    // Обгортаємо віджет у SizedBox, якщо задано розмір
+    if (width != null && height != null) {
+      // Для Container розмір застосовується напряму, тому SizedBox не потрібен
+      if (widgetType == 'Container') {
+         return widgetCode.replaceFirst('Container(', 'Container(\nwidth: $width,\nheight: $height,');
+      } 
+      return 'SizedBox(\nwidth: $width,\nheight: $height,\nchild: $widgetCode,\n)';
+    }
+
+    return widgetCode;
+  }
+
+  /// Допоміжна функція для генерації коду кольору.
+  String _getColorCode(Color? color) {
+    if (color == null) return 'Colors.transparent';
+    return 'Color(0x${color.value.toRadixString(16).padLeft(8, '0')})';
   }
 }
