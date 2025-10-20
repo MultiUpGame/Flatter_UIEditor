@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/editor/canvas_widget_data.dart';
+import 'package:myapp/editor/palette/palette_category_view.dart';
+import 'package:myapp/editor/palette/widgets_palette_data.dart';
 import 'package:myapp/editor/properties/properties_inspector.dart';
+import 'package:myapp/editor/tree/widget_tree_view.dart';
 import 'package:myapp/editor/widgets/canvas_view.dart';
-import 'package:myapp/editor/widgets/palette_category_view.dart';
-import 'package:myapp/editor/widgets/widget_tree_view.dart';
-import 'package:myapp/editor/widgets_palette_data.dart';
 
 class UiEditorScreen extends StatefulWidget {
   const UiEditorScreen({super.key});

@@ -2,10 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:myapp/editor/canvas_widget_data.dart';
+import 'package:myapp/editor/palette/widgets_palette_data.dart';
 import 'package:myapp/editor/widget_factory.dart';
 import 'package:myapp/editor/widgets/draggable_item.dart';
 import 'package:myapp/editor/widgets/grid_painter.dart';
-import 'package:myapp/editor/widgets_palette_data.dart';
 
 class CanvasView extends StatefulWidget {
   final Function(CanvasWidgetData?) onWidgetSelected;
@@ -152,7 +152,7 @@ class _CanvasViewState extends State<CanvasView> {
                     },
                     child: _buildWidgetUI(widgetData),
                   );
-                }).toList(),
+                }),
               ],
             ),
           );

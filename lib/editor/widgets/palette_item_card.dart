@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/editor/palette/widgets_palette_data.dart';
 import 'package:myapp/editor/widget_factory.dart';
-import 'package:myapp/editor/widgets_palette_data.dart';
 
 // Віджет для одного елемента в палітрі
 class PaletteItemCard extends StatelessWidget {
