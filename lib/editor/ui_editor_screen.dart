@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/editor/canvas_widget_data.dart';
+import 'package:myapp/editor/properties/properties_inspector.dart';
 import 'package:myapp/editor/widgets/canvas_view.dart';
 import 'package:myapp/editor/widgets/palette_category_view.dart';
-import 'package:myapp/editor/widgets/properties_inspector.dart';
 import 'package:myapp/editor/widgets/widget_tree_view.dart';
 import 'package:myapp/editor/widgets_palette_data.dart';
 
