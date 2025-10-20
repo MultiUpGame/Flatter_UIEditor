@@ -31,7 +31,7 @@ class _WidgetTreeViewState extends State<WidgetTreeView> {
     super.initState();
     _treeController = TreeController<CanvasWidgetData>(
       roots: widget.widgets,
-      childrenProvider: (widgetData) => widgetData.children,
+      childrenProvider: (widgetData) => widgetData.childWidgets,
     );
   }
 

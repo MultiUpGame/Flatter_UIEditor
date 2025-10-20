@@ -1,4 +1,3 @@
-
 import 'package:flutter/foundation.dart';
 import 'package:myapp/editor/canvas_widget_data.dart';
 
@@ -60,7 +59,7 @@ class CanvasController {
   CanvasWidgetData? findWidgetById(List<CanvasWidgetData> widgets, String id) {
     for (var widget in widgets) {
       if (widget.id == id) return widget;
-      final foundInChildren = findWidgetById(widget.children, id);
+      final foundInChildren = findWidgetById(widget.childWidgets, id);
       if (foundInChildren != null) return foundInChildren;
     }
     return null;
@@ -72,8 +71,8 @@ class CanvasController {
     List<CanvasWidgetData> newWidgets = [];
     for (var widget in widgets) {
       if (widget.id != id) {
-        final newChildren = _removeWidgetFromTree(widget.children, id);
-        newWidgets.add(widget.copyWith(children: newChildren));
+        final newChildren = _removeWidgetFromTree(widget.childWidgets, id);
+        newWidgets.add(widget.copyWith(childWidgets: newChildren));
       }
     }
     return newWidgets;
@@ -84,12 +83,12 @@ class CanvasController {
       CanvasWidgetData widgetToAdd, String targetId) {
     return widgets.map((widget) {
       if (widget.id == targetId) {
-        final newChildren = [...widget.children, widgetToAdd];
-        return widget.copyWith(children: newChildren);
+        final newChildren = [...widget.childWidgets, widgetToAdd];
+        return widget.copyWith(childWidgets: newChildren);
       }
       return widget.copyWith(
-          children:
-              _addWidgetToTarget(widget.children, widgetToAdd, targetId));
+          childWidgets:
+              _addWidgetToTarget(widget.childWidgets, widgetToAdd, targetId));
     }).toList();
   }
 
@@ -101,7 +100,7 @@ class CanvasController {
         return widgetToUpdate;
       }
       return widget.copyWith(
-          children: _updateWidgetInTree(widget.children, widgetToUpdate));
+          childWidgets: _updateWidgetInTree(widget.childWidgets, widgetToUpdate));
     }).toList();
   }
 
@@ -110,21 +109,4 @@ class CanvasController {
     canvasWidgetsNotifier.dispose();
     selectedWidgetDataNotifier.dispose();
   }
-}
-
-// Додамо метод copyWith до CanvasWidgetData для зручності
-extension on CanvasWidgetData {
-    CanvasWidgetData copyWith({
-        List<CanvasWidgetData>? children,
-    }) {
-        return CanvasWidgetData(
-            id: id,
-            widget: widget,
-            position: position,
-            size: size,
-            color: color,
-            key: key,
-            children: children ?? this.children,
-        );
-    }
 }

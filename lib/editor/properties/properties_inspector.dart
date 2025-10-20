@@ -53,7 +53,14 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
       _yController.text = data.position.dy.toStringAsFixed(2);
       _widthController.text = data.size?.width.toStringAsFixed(2) ?? '';
       _heightController.text = data.size?.height.toStringAsFixed(2) ?? '';
-      _currentColor = data.color;
+
+      // Визначаємо колір безпосередньо з віджета
+      if (data.widget is Container) {
+        final decoration = (data.widget as Container).decoration as BoxDecoration?;
+        _currentColor = decoration?.color;
+      } else {
+        _currentColor = null;
+      }
 
       if (data.widget is Text) {
         _textController.text = (data.widget as Text).data ?? '';
@@ -109,13 +116,12 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
         }
     }
 
-    final updatedData = CanvasWidgetData(
-      id: currentData.id,
+    // Використовуємо copyWith для безпечного оновлення, зберігаючи дочірні віджети
+    final updatedData = currentData.copyWith(
       widget: updatedInternalWidget,
       position: newPosition,
       size: newSize,
-      color: finalColor,
-      key: currentData.key,
+      color: finalColor, // Оновлюємо колір
     );
     widget.onWidgetUpdated(updatedData);
   }
@@ -127,7 +133,7 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
         title: const Text('Pick a color!'),
         content: SingleChildScrollView(
           child: ColorPicker(
-            pickerColor: _currentColor ?? Colors.blue,
+            pickerColor: _currentColor ?? Colors.blue, // Показуємо поточний колір
             onColorChanged: (color) => setState(() => _currentColor = color),
           ),
         ),
@@ -164,7 +170,7 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: _currentColor,
+            color: _currentColor, // Відображаємо поточний колір
             shape: BoxShape.circle,
             border: Border.all(color: Colors.grey),
           ),

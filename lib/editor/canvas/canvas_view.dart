@@ -37,7 +37,7 @@ class _CanvasViewState extends State<CanvasView> {
   Widget _buildWidgetUI(CanvasWidgetData widgetData) {
     Widget currentWidget;
 
-    final children = widgetData.children.map((child) => _buildWidgetUI(child)).toList();
+    final children = widgetData.childWidgets.map((child) => _buildWidgetUI(child)).toList();
 
     if (widgetData.widget is Container) {
       currentWidget = Container(
@@ -101,7 +101,6 @@ class _CanvasViewState extends State<CanvasView> {
             widget: newWidget,
             position: localPosition,
             size: const Size(150, 100), // Змінив розмір за замовчуванням
-            key: GlobalKey(),
           );
 
           final updatedWidgets = [...widget.canvasWidgets, newWidgetData];
@@ -133,13 +132,8 @@ class _CanvasViewState extends State<CanvasView> {
                           _canvasKey.currentContext!.findRenderObject() as RenderBox;
                       final localPosition = canvasBox.globalToLocal(globalPosition);
 
-                      final updatedData = CanvasWidgetData(
-                        id: widgetData.id,
-                        widget: widgetData.widget,
+                      final updatedData = widgetData.copyWith(
                         position: localPosition,
-                        size: widgetData.size,
-                        key: widgetData.key,
-                        children: widgetData.children,
                       );
 
                       final index = widget.canvasWidgets.indexWhere((w) => w.id == widgetData.id);
