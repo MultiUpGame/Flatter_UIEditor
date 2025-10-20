@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:myapp/editor/canvas_controller.dart';
 import 'package:myapp/editor/canvas_widget_data.dart';
 import 'package:myapp/editor/palette/palette_category_view.dart';
@@ -6,6 +7,7 @@ import 'package:myapp/editor/palette/widgets_palette_data.dart';
 import 'package:myapp/editor/properties/properties_inspector.dart';
 import 'package:myapp/editor/tree/widget_tree_view.dart';
 import 'package:myapp/editor/canvas/canvas_view.dart';
+import 'package:myapp/generator/code_generator.dart';
 
 class UiEditorScreen extends StatefulWidget {
   const UiEditorScreen({super.key});
@@ -29,6 +31,44 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
     super.dispose();
   }
 
+  /// Показує діалогове вікно з згенерованим кодом.
+  void _showGeneratedCode() {
+    final codeGenerator = CodeGenerator();
+    final currentWidgets = _canvasController.canvasWidgetsNotifier.value;
+    final generatedCode = codeGenerator.generateScreenCode(currentWidgets);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Згенерований Dart-код'),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.7, // 70% ширини екрану
+          child: SingleChildScrollView(
+            child: SelectableText(
+              generatedCode,
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: generatedCode));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Код скопійовано до буфера обміну!')),
+              );
+            },
+            child: const Text('Копіювати'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Закрити'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Map<String, List<PaletteItem>> groupedWidgets = {};
@@ -44,10 +84,28 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
     return Scaffold(
       body: Column(
         children: [
+          // Панель інструментів
           Container(
-              height: 30,
+              height: 40, // Збільшено висоту для кнопки
               color: Colors.blueGrey[100],
-              child: const Center(child: Text('Панель інструментів'))),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Flutter UI Редактор', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.code, size: 16),
+                    label: const Text('Згенерувати код'),
+                    onPressed: _showGeneratedCode,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      textStyle: const TextStyle(fontSize: 12),
+                      backgroundColor: Colors.blue[700],
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              )),
           const Divider(height: 1),
           Expanded(
             child: Row(
