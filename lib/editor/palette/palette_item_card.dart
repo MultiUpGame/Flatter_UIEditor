@@ -2,27 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:myapp/editor/palette/widgets_palette_data.dart';
 import 'package:myapp/editor/widget_factory.dart';
 
-// Віджет для одного елемента в палітрі
 class PaletteItemCard extends StatelessWidget {
   final PaletteItem item;
 
   const PaletteItemCard({super.key, required this.item});
 
   @override
-  Widget build(BuildContext context) => Draggable<PaletteItem>(
-        data: item, // Дані, що перетягуються
-        // Віджет, який видно під курсором під час перетягування
+  Widget build(BuildContext context) {
+    final widgetFactory = WidgetFactory();
+    return Draggable<PaletteItem>(
+        data: item,
         feedback: Material(
           color: Colors.transparent,
-          child: createWidgetFromName(item.name),
+          child: widgetFactory.createWidgetFromName(item.name),
         ),
-        // Оригінальний віджет у списку
         child: InkWell(
-          onTap: () {
-            // Поки що нічого не робимо, але залишаємо для майбутнього
-          },
+          onTap: () {},
           child: SizedBox(
-            height: 24, // Жорстка висота елемента
+            height: 24,
             child: Row(
               children: [
                 Icon(item.icon, size: 15),
@@ -36,4 +33,5 @@ class PaletteItemCard extends StatelessWidget {
           ),
         ),
       );
+  }
 }

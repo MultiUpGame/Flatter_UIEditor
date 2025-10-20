@@ -28,6 +28,7 @@ class CanvasView extends StatefulWidget {
 class _CanvasViewState extends State<CanvasView> {
   final Random _random = Random();
   final GlobalKey _canvasKey = GlobalKey();
+  final WidgetFactory _widgetFactory = WidgetFactory();
 
   void _selectWidget(CanvasWidgetData? widgetData) {
     widget.onWidgetSelected(widgetData);
@@ -37,7 +38,6 @@ class _CanvasViewState extends State<CanvasView> {
     Widget currentWidget;
     final children = widgetData.childWidgets.map((child) => _buildWidgetUI(child)).toList();
 
-    // Створюємо віджет на основі його типу
     if (widgetData.widget is Container) {
       currentWidget = Container(
         width: widgetData.size?.width,
@@ -59,7 +59,6 @@ class _CanvasViewState extends State<CanvasView> {
         currentWidget = widgetData.widget;
     }
 
-    // Обгортаємо віджет у SizedBox, якщо задано розмір
     if (widgetData.size != null && widgetData.widget is! Container) {
         currentWidget = SizedBox(
             width: widgetData.size!.width,
@@ -95,7 +94,7 @@ class _CanvasViewState extends State<CanvasView> {
 
           if (details.data is PaletteItem) {
             final newId = 'widget_${_random.nextInt(100000)}';
-            final newWidget = createWidgetFromName((details.data as PaletteItem).name);
+            final newWidget = _widgetFactory.createWidgetFromName((details.data as PaletteItem).name);
             final newWidgetData = CanvasWidgetData(
               id: newId,
               widget: newWidget,
