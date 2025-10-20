@@ -1,10 +1,10 @@
-
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:myapp/editor/canvas_widget_data.dart';
 import 'package:myapp/editor/widget_factory.dart';
 import 'package:myapp/editor/widgets/draggable_item.dart';
+import 'package:myapp/editor/widgets/grid_painter.dart';
 import 'package:myapp/editor/widgets_palette_data.dart';
 
 class CanvasView extends StatefulWidget {
@@ -113,40 +113,47 @@ class _CanvasViewState extends State<CanvasView> {
             key: _canvasKey,
             color: candidateData.isNotEmpty
                 ? Colors.lightGreen[100]
-                : Colors.grey[300],
+                : Colors.white, // Changed background to white for better grid visibility
             child: Stack(
-              children: widget.canvasWidgets.map((widgetData) {
-                // Кожен віджет верхнього рівня є DraggableItem
-                return DraggableItem(
-                  key: ValueKey(widgetData.id),
-                  position: widgetData.position,
-                  onTap: () => _selectWidget(widgetData),
-                  onDragEnd: (globalPosition) {
-                    final RenderBox canvasBox =
-                        _canvasKey.currentContext!.findRenderObject() as RenderBox;
-                    final localPosition = canvasBox.globalToLocal(globalPosition);
+              children: [
+                // Grid background
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: GridPainter(gridSize: 10.0),
+                  ),
+                ),
+                // Draggable widgets
+                ...widget.canvasWidgets.map((widgetData) {
+                  return DraggableItem(
+                    key: ValueKey(widgetData.id),
+                    position: widgetData.position,
+                    onTap: () => _selectWidget(widgetData),
+                    onDragEnd: (globalPosition) {
+                      final RenderBox canvasBox =
+                          _canvasKey.currentContext!.findRenderObject() as RenderBox;
+                      final localPosition = canvasBox.globalToLocal(globalPosition);
 
-                    final updatedData = CanvasWidgetData(
-                      id: widgetData.id,
-                      widget: widgetData.widget,
-                      position: localPosition,
-                      size: widgetData.size,
-                      key: widgetData.key,
-                      children: widgetData.children, // Зберігаємо дочірні
-                    );
+                      final updatedData = CanvasWidgetData(
+                        id: widgetData.id,
+                        widget: widgetData.widget,
+                        position: localPosition,
+                        size: widgetData.size,
+                        key: widgetData.key,
+                        children: widgetData.children,
+                      );
 
-                    final index = widget.canvasWidgets.indexWhere((w) => w.id == widgetData.id);
-                    if(index != -1) {
-                      final updatedWidgets = [...widget.canvasWidgets];
-                      updatedWidgets[index] = updatedData;
-                      widget.onWidgetsUpdated(updatedWidgets);
-                      _selectWidget(updatedData);
-                    }
-                  },
-                  // Передаємо рекурсивно збудований віджет
-                  child: _buildWidgetUI(widgetData),
-                );
-              }).toList(),
+                      final index = widget.canvasWidgets.indexWhere((w) => w.id == widgetData.id);
+                      if(index != -1) {
+                        final updatedWidgets = [...widget.canvasWidgets];
+                        updatedWidgets[index] = updatedData;
+                        widget.onWidgetsUpdated(updatedWidgets);
+                        _selectWidget(updatedData);
+                      }
+                    },
+                    child: _buildWidgetUI(widgetData),
+                  );
+                }).toList(),
+              ],
             ),
           );
         },

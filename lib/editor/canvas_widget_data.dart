@@ -1,12 +1,11 @@
-
 import 'package:flutter/material.dart';
 
 class CanvasWidgetData {
   final String id;
   final Widget widget;
-  Offset position;
-  Size? size;
-  Color? color;
+  final Offset position;
+  final Size? size;
+  final Color? color;
   final GlobalKey key;
   final List<CanvasWidgetData> children;
 

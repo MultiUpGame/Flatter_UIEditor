@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:myapp/editor/canvas_widget_data.dart';
 import 'package:myapp/editor/widgets/canvas_view.dart';
@@ -34,6 +33,15 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
   void _onWidgetsUpdated(List<CanvasWidgetData> updatedWidgets) {
     setState(() {
       _canvasWidgets = updatedWidgets;
+    });
+  }
+
+  void _onWidgetDeleted(String widgetId) {
+    setState(() {
+      _canvasWidgets = _removeWidgetFromTree(_canvasWidgets, widgetId);
+      if (_selectedWidgetData?.id == widgetId) {
+        _selectedWidgetData = null;
+      }
     });
   }
 
@@ -202,6 +210,7 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
                   child: PropertiesInspector(
                     selectedWidgetData: _selectedWidgetData,
                     onWidgetUpdated: _onWidgetUpdated,
+                    onWidgetDeleted: _onWidgetDeleted, // Передаємо функцію видалення
                   ),
                 ),
               ],

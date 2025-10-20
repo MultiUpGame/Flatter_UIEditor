@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:myapp/editor/canvas_widget_data.dart';
@@ -6,11 +5,13 @@ import 'package:myapp/editor/canvas_widget_data.dart';
 class PropertiesInspector extends StatefulWidget {
   final CanvasWidgetData? selectedWidgetData;
   final Function(CanvasWidgetData) onWidgetUpdated;
+  final Function(String)? onWidgetDeleted;
 
   const PropertiesInspector({
     super.key,
     this.selectedWidgetData,
     required this.onWidgetUpdated,
+    this.onWidgetDeleted,
   });
 
   @override
@@ -143,6 +144,33 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
     );
   }
 
+  Widget _buildTextEditableProperty(
+          String label, TextEditingController controller, {bool isNumeric = false}) =>
+      TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+        keyboardType: isNumeric
+            ? const TextInputType.numberWithOptions(decimal: true)
+            : TextInputType.text,
+        onSubmitted: (_) => _updateWidget(),
+      );
+
+  Widget _buildColorProperty() => GestureDetector(
+        onTap: _showColorPicker,
+        child: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: _currentColor,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.grey),
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     if (widget.selectedWidgetData == null) {
@@ -154,11 +182,27 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
       );
     }
 
+    Widget deleteButton = Padding(
+      padding: const EdgeInsets.only(top: 24.0),
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.delete_forever),
+        label: const Text('Delete Widget'),
+        onPressed: () {
+          if (widget.onWidgetDeleted != null) {
+            widget.onWidgetDeleted!(widget.selectedWidgetData!.id);
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.red,
+        ),
+      ),
+    );
+
     return Container(
       color: Colors.grey[200],
       padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListView(
         children: [
           const Text('Properties', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
@@ -169,23 +213,9 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
           const SizedBox(height: 8),
           Row(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _xController,
-                  decoration: const InputDecoration(labelText: 'X', border: OutlineInputBorder()),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onSubmitted: (_) => _updateWidget(),
-                ),
-              ),
+              Expanded(child: _buildTextEditableProperty('X', _xController, isNumeric: true)),
               const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: _yController,
-                  decoration: const InputDecoration(labelText: 'Y', border: OutlineInputBorder()),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                   onSubmitted: (_) => _updateWidget(),
-                ),
-              ),
+              Expanded(child: _buildTextEditableProperty('Y', _yController, isNumeric: true)),
             ],
           ),
           const SizedBox(height: 16),
@@ -194,23 +224,9 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
           const SizedBox(height: 8),
           Row(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _widthController,
-                  decoration: const InputDecoration(labelText: 'Width', border: OutlineInputBorder()),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onSubmitted: (_) => _updateWidget(),
-                ),
-              ),
+              Expanded(child: _buildTextEditableProperty('Width', _widthController, isNumeric: true)),
               const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: _heightController,
-                  decoration: const InputDecoration(labelText: 'Height', border: OutlineInputBorder()),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                   onSubmitted: (_) => _updateWidget(),
-                ),
-              ),
+              Expanded(child: _buildTextEditableProperty('Height', _heightController, isNumeric: true)),
             ],
           ),
           const SizedBox(height: 16),
@@ -218,31 +234,17 @@ class _PropertiesInspectorState extends State<PropertiesInspector> {
           if (widget.selectedWidgetData!.widget is Text) ...[
              const Text('Text Content', style: TextStyle(fontWeight: FontWeight.w600)),
              const SizedBox(height: 8),
-             TextField(
-                controller: _textController,
-                decoration: const InputDecoration(
-                  labelText: 'Text',
-                  border: OutlineInputBorder(),
-                ),
-                onSubmitted: (_) => _updateWidget(),
-              ),
+             _buildTextEditableProperty('Text', _textController),
+             const SizedBox(height: 16),
           ],
           if (widget.selectedWidgetData!.widget is Container) ...[
             const Text('Color', style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            GestureDetector(
-              onTap: _showColorPicker,
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: _currentColor,
-                  shape: BoxShape.circle, // Ось тут ми робимо коло
-                  border: Border.all(color: Colors.grey),
-                ),
-              ),
-            )
-          ]
+            _buildColorProperty(),
+            const SizedBox(height: 16),
+          ],
+          
+          if (widget.onWidgetDeleted != null) deleteButton,
         ],
       ),
     );
