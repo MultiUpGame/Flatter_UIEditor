@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 // Універсальний віджет для перетягування будь-якого вмісту (child)
@@ -7,6 +6,7 @@ class DraggableItem extends StatelessWidget {
   final VoidCallback onTap;
   final Function(Offset) onDragEnd;
   final Widget child;
+  final double scale;
 
   const DraggableItem({
     super.key,
@@ -14,6 +14,7 @@ class DraggableItem extends StatelessWidget {
     required this.onTap,
     required this.onDragEnd,
     required this.child,
+    this.scale = 1.0,
   });
 
   @override
