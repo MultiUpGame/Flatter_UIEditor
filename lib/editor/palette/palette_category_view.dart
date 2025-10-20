@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/editor/palette/widgets_palette_data.dart';
-import 'package:myapp/editor/widgets/palette_item_card.dart';
+import 'package:myapp/editor/palette/palette_item_card.dart';
 
 // Віджет для однієї категорії в палітрі
 class PaletteCategoryView extends StatelessWidget {
