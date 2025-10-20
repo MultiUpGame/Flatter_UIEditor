@@ -33,15 +33,6 @@ class _CanvasViewState extends State<CanvasView> {
     widget.onWidgetSelected(widgetData);
   }
 
-  CanvasWidgetData? _findWidgetById(List<CanvasWidgetData> widgets, String id) {
-    for (var widget in widgets) {
-      if (widget.id == id) return widget;
-      final foundInChildren = _findWidgetById(widget.children, id);
-      if (foundInChildren != null) return foundInChildren;
-    }
-    return null;
-  }
-
   // Рекурсивна функція для побудови UI віджетів
   Widget _buildWidgetUI(CanvasWidgetData widgetData) {
     Widget currentWidget;
@@ -96,7 +87,7 @@ class _CanvasViewState extends State<CanvasView> {
     return GestureDetector(
       onTap: () => _selectWidget(null),
       child: DragTarget<Object>(
-        onWillAccept: (data) => data is PaletteItem,
+        onWillAcceptWithDetails: (details) => details.data is PaletteItem,
         onAcceptWithDetails: (details) {
           final RenderBox canvasBox =
               _canvasKey.currentContext!.findRenderObject() as RenderBox;

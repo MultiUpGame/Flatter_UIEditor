@@ -23,7 +23,7 @@ class PaletteCategoryView extends StatelessWidget {
         borderRadius: BorderRadius.circular(4.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withAlpha(25), // corrected opacity
             blurRadius: 2.0,
             offset: const Offset(0, 1),
           ),
