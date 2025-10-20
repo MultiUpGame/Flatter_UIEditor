@@ -31,7 +31,6 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
     super.dispose();
   }
 
-  /// Показує діалогове вікно з згенерованим кодом.
   void _showGeneratedCode() {
     final codeGenerator = CodeGenerator();
     final currentWidgets = _canvasController.canvasWidgetsNotifier.value;
@@ -42,7 +41,7 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Згенерований Dart-код'),
         content: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.7, // 70% ширини екрану
+          width: MediaQuery.of(context).size.width * 0.7,
           child: SingleChildScrollView(
             child: SelectableText(
               generatedCode,
@@ -84,9 +83,8 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
     return Scaffold(
       body: Column(
         children: [
-          // Панель інструментів
           Container(
-              height: 40, // Збільшено висоту для кнопки
+              height: 40,
               color: Colors.blueGrey[100],
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -110,7 +108,6 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
           Expanded(
             child: Row(
               children: [
-                // Ліва панель: Палітра та Дерево віджетів
                 Container(
                   width: 200,
                   color: basePanelColor,
@@ -137,7 +134,6 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
                       const Divider(height: 1),
                       Expanded(
                         flex: 3,
-                        // Використовуємо ValueListenableBuilder для дерева
                         child: ValueListenableBuilder<List<CanvasWidgetData>>(
                           valueListenable:
                               _canvasController.canvasWidgetsNotifier,
@@ -150,10 +146,8 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
                                   widgets: widgets,
                                   selectedId: selectedWidget?.id,
                                   onSelected: (id) {
-                                    final selected = _canvasController
-                                        .findWidgetById(widgets, id);
-                                    _canvasController
-                                        .onWidgetSelected(selected);
+                                    final selected = _canvasController.findWidgetById(id);
+                                    _canvasController.onWidgetSelected(selected);
                                   },
                                   onWidgetMoved:
                                       _canvasController.handleWidgetMove,
@@ -166,12 +160,10 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
                     ],
                   ),
                 ),
-                // Центральна частина: Полотно
                 Expanded(
                   child: Column(
                     children: [
                       Expanded(
-                        // Аналогічно для CanvasView
                         child: ValueListenableBuilder<List<CanvasWidgetData>>(
                           valueListenable:
                               _canvasController.canvasWidgetsNotifier,
@@ -203,11 +195,9 @@ class _UiEditorScreenState extends State<UiEditorScreen> {
                     ],
                   ),
                 ),
-                // Права панель: Інспектор властивостей
                 Container(
                   width: 200,
                   color: basePanelColor,
-                  // І для PropertiesInspector
                   child: ValueListenableBuilder<CanvasWidgetData?>(
                     valueListenable:
                         _canvasController.selectedWidgetDataNotifier,

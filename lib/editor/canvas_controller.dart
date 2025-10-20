@@ -1,73 +1,83 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:myapp/editor/canvas_widget_data.dart';
 
-/// Контролер, що інкапсулює всю логіку керування станом полотна.
-/// Використовує ValueNotifier для повідомлення слухачів про зміни.
 class CanvasController {
-  /// Сповіщувач для списку віджетів на полотні.
   final ValueNotifier<List<CanvasWidgetData>> canvasWidgetsNotifier =
       ValueNotifier<List<CanvasWidgetData>>([]);
-
-  /// Сповіщувач для вибраного на даний момент віджета.
   final ValueNotifier<CanvasWidgetData?> selectedWidgetDataNotifier =
       ValueNotifier<CanvasWidgetData?>(null);
 
-  // Геттери для зручного доступу до поточних значень
   List<CanvasWidgetData> get canvasWidgets => canvasWidgetsNotifier.value;
   CanvasWidgetData? get selectedWidgetData => selectedWidgetDataNotifier.value;
 
-  /// Викликається, коли користувач вибирає віджет на полотні або в дереві.
   void onWidgetSelected(CanvasWidgetData? widgetData) {
     selectedWidgetDataNotifier.value = widgetData;
   }
 
-  /// Оновлює властивості віджета (наприклад, з інспектора властивостей).
+  void onWidgetsUpdated(List<CanvasWidgetData> updatedWidgets) {
+    canvasWidgetsNotifier.value = updatedWidgets;
+  }
+
   void onWidgetUpdated(CanvasWidgetData updatedWidgetData) {
-    canvasWidgetsNotifier.value =
-        _updateWidgetInTree(canvasWidgets, updatedWidgetData);
-    // Якщо оновлений віджет є вибраним, оновимо його і в сповіщувачі.
+    canvasWidgetsNotifier.value = _updateWidgetInTree(canvasWidgets, updatedWidgetData);
     if (selectedWidgetData?.id == updatedWidgetData.id) {
       selectedWidgetDataNotifier.value = updatedWidgetData;
     }
   }
 
-  /// Повністю замінює список віджетів на полотні.
-  void onWidgetsUpdated(List<CanvasWidgetData> updatedWidgets) {
-    canvasWidgetsNotifier.value = updatedWidgets;
-  }
-
-  /// Видаляє віджет з полотна.
   void onWidgetDeleted(String widgetId) {
     canvasWidgetsNotifier.value = _removeWidgetFromTree(canvasWidgets, widgetId);
-    // Якщо видалений віджет був вибраним, знімаємо виділення.
     if (selectedWidgetData?.id == widgetId) {
       selectedWidgetDataNotifier.value = null;
     }
   }
 
-  /// Обробляє перетягування віджета в дереві.
-  void handleWidgetMove(String draggedItemId, String targetItemId) {
-    final draggedWidget = findWidgetById(canvasWidgets, draggedItemId);
-    if (draggedWidget == null) return;
+  void handleWidgetMove(String draggedItemId, String? targetItemId) {
+    final widgetToMove = findWidgetById(draggedItemId);
+    if (widgetToMove == null) return;
 
+    // 1. Видаляємо віджет зі старої позиції
     var newTree = _removeWidgetFromTree(canvasWidgets, draggedItemId);
-    newTree = _addWidgetToTarget(newTree, draggedWidget, targetItemId);
+
+    // 2. Готуємо віджет до переміщення
+    final movedWidget = widgetToMove.copyWith(
+      parentId: targetItemId,
+      // Скидаємо позицію, якщо віджет стає дочірнім
+      position: targetItemId != null ? Offset.zero : widgetToMove.position,
+    );
+
+    // 3. Додаємо віджет на нову позицію
+    if (targetItemId == null) {
+      // Переміщення на верхній рівень
+      newTree.add(movedWidget);
+    } else {
+      // Переміщення в дочірні
+      newTree = _addWidgetToTarget(newTree, movedWidget, targetItemId);
+    }
+
     canvasWidgetsNotifier.value = newTree;
   }
 
-  /// Рекурсивно шукає віджет за його ID у дереві.
-  CanvasWidgetData? findWidgetById(List<CanvasWidgetData> widgets, String id) {
-    for (var widget in widgets) {
+  CanvasWidgetData? findWidgetById(String id) {
+    for (var widget in canvasWidgets) {
       if (widget.id == id) return widget;
-      final foundInChildren = findWidgetById(widget.childWidgets, id);
+      final foundInChildren = _findRecursive(widget.childWidgets, id);
       if (foundInChildren != null) return foundInChildren;
     }
     return null;
   }
 
-  /// Рекурсивно видаляє віджет з дерева, повертаючи нове дерево.
-  List<CanvasWidgetData> _removeWidgetFromTree(
-      List<CanvasWidgetData> widgets, String id) {
+  CanvasWidgetData? _findRecursive(List<CanvasWidgetData> widgets, String id) {
+    for (var widget in widgets) {
+      if (widget.id == id) return widget;
+      final foundInChildren = _findRecursive(widget.childWidgets, id);
+      if (foundInChildren != null) return foundInChildren;
+    }
+    return null;
+  }
+
+  List<CanvasWidgetData> _removeWidgetFromTree(List<CanvasWidgetData> widgets, String id) {
     List<CanvasWidgetData> newWidgets = [];
     for (var widget in widgets) {
       if (widget.id != id) {
@@ -78,33 +88,28 @@ class CanvasController {
     return newWidgets;
   }
 
-  /// Рекурсивно додає віджет до цільового елемента, повертаючи нове дерево.
-  List<CanvasWidgetData> _addWidgetToTarget(List<CanvasWidgetData> widgets,
-      CanvasWidgetData widgetToAdd, String targetId) {
+  List<CanvasWidgetData> _addWidgetToTarget(List<CanvasWidgetData> widgets, CanvasWidgetData widgetToAdd, String targetId) {
     return widgets.map((widget) {
       if (widget.id == targetId) {
         final newChildren = [...widget.childWidgets, widgetToAdd];
         return widget.copyWith(childWidgets: newChildren);
       }
       return widget.copyWith(
-          childWidgets:
-              _addWidgetToTarget(widget.childWidgets, widgetToAdd, targetId));
+          childWidgets: _addWidgetToTarget(widget.childWidgets, widgetToAdd, targetId));
     }).toList();
   }
 
-  /// Рекурсивно оновлює віджет у дереві, повертаючи нове дерево.
-  List<CanvasWidgetData> _updateWidgetInTree(
-      List<CanvasWidgetData> widgets, CanvasWidgetData widgetToUpdate) {
+  List<CanvasWidgetData> _updateWidgetInTree(List<CanvasWidgetData> widgets, CanvasWidgetData widgetToUpdate) {
     return widgets.map((widget) {
       if (widget.id == widgetToUpdate.id) {
-        return widgetToUpdate;
+        // Зберігаємо дочірні віджети при оновленні, оскільки widgetToUpdate їх не містить
+        return widgetToUpdate.copyWith(childWidgets: widget.childWidgets);
       }
       return widget.copyWith(
           childWidgets: _updateWidgetInTree(widget.childWidgets, widgetToUpdate));
     }).toList();
   }
 
-  /// Очищує ресурси при знищенні контролера.
   void dispose() {
     canvasWidgetsNotifier.dispose();
     selectedWidgetDataNotifier.dispose();

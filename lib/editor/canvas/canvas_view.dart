@@ -33,12 +33,11 @@ class _CanvasViewState extends State<CanvasView> {
     widget.onWidgetSelected(widgetData);
   }
 
-  // Рекурсивна функція для побудови UI віджетів
   Widget _buildWidgetUI(CanvasWidgetData widgetData) {
     Widget currentWidget;
-
     final children = widgetData.childWidgets.map((child) => _buildWidgetUI(child)).toList();
 
+    // Створюємо віджет на основі його типу
     if (widgetData.widget is Container) {
       currentWidget = Container(
         width: widgetData.size?.width,
@@ -57,25 +56,25 @@ class _CanvasViewState extends State<CanvasView> {
         children: children,
       );
     } else {
-      currentWidget = SizedBox(
-        width: widgetData.size?.width,
-        height: widgetData.size?.height,
-        child: widgetData.widget,
-      );
+        currentWidget = widgetData.widget;
+    }
+
+    // Обгортаємо віджет у SizedBox, якщо задано розмір
+    if (widgetData.size != null && widgetData.widget is! Container) {
+        currentWidget = SizedBox(
+            width: widgetData.size!.width,
+            height: widgetData.size!.height,
+            child: currentWidget,
+        );
     }
 
     final isSelected = widget.selectedWidgetData?.id == widgetData.id;
 
-    // Обгортаємо віджет у GestureDetector для виділення
     return GestureDetector(
-      onTap: () {
-        _selectWidget(widgetData);
-      },
+      onTap: () => _selectWidget(widgetData),
       child: Container(
         decoration: isSelected
-            ? BoxDecoration(
-                border: Border.all(color: Colors.blueAccent, width: 2),
-              )
+            ? BoxDecoration(border: Border.all(color: Colors.blueAccent, width: 2))
             : null,
         child: currentWidget,
       ),
@@ -84,60 +83,48 @@ class _CanvasViewState extends State<CanvasView> {
 
   @override
   Widget build(BuildContext context) {
+    final topLevelWidgets = widget.canvasWidgets.where((w) => w.parentId == null).toList();
+
     return GestureDetector(
       onTap: () => _selectWidget(null),
       child: DragTarget<Object>(
-        onWillAcceptWithDetails: (details) => details.data is PaletteItem,
+        onWillAcceptWithDetails: (details) => details.data is PaletteItem || details.data is CanvasWidgetData,
         onAcceptWithDetails: (details) {
-          final RenderBox canvasBox =
-              _canvasKey.currentContext!.findRenderObject() as RenderBox;
+          final RenderBox canvasBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
           final localPosition = canvasBox.globalToLocal(details.offset);
 
-          final newId = 'widget_${_random.nextInt(100000)}';
-          final newWidget = createWidgetFromName((details.data as PaletteItem).name);
-
-          final newWidgetData = CanvasWidgetData(
-            id: newId,
-            widget: newWidget,
-            position: localPosition,
-            size: const Size(150, 100), // Змінив розмір за замовчуванням
-          );
-
-          final updatedWidgets = [...widget.canvasWidgets, newWidgetData];
-          widget.onWidgetsUpdated(updatedWidgets);
-          _selectWidget(newWidgetData);
+          if (details.data is PaletteItem) {
+            final newId = 'widget_${_random.nextInt(100000)}';
+            final newWidget = createWidgetFromName((details.data as PaletteItem).name);
+            final newWidgetData = CanvasWidgetData(
+              id: newId,
+              widget: newWidget,
+              position: localPosition,
+              size: const Size(150, 100),
+            );
+            final updatedWidgets = [...widget.canvasWidgets, newWidgetData];
+            widget.onWidgetsUpdated(updatedWidgets);
+            _selectWidget(newWidgetData);
+          }
         },
         builder: (context, candidateData, rejectedData) {
           return Container(
             key: _canvasKey,
-            color: candidateData.isNotEmpty
-                ? Colors.lightGreen[100]
-                : Colors.white, // Changed background to white for better grid visibility
+            color: candidateData.isNotEmpty ? Colors.lightGreen[100] : Colors.white,
             child: Stack(
               children: [
-                // Grid background
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: GridPainter(gridSize: 10.0),
-                  ),
-                ),
-                // Draggable widgets
-                ...widget.canvasWidgets.map((widgetData) {
+                Positioned.fill(child: CustomPaint(painter: GridPainter(gridSize: 10.0))),
+                ...topLevelWidgets.map((widgetData) {
                   return DraggableItem(
                     key: ValueKey(widgetData.id),
                     position: widgetData.position,
                     onTap: () => _selectWidget(widgetData),
                     onDragEnd: (globalPosition) {
-                      final RenderBox canvasBox =
-                          _canvasKey.currentContext!.findRenderObject() as RenderBox;
+                      final RenderBox canvasBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
                       final localPosition = canvasBox.globalToLocal(globalPosition);
-
-                      final updatedData = widgetData.copyWith(
-                        position: localPosition,
-                      );
-
+                      final updatedData = widgetData.copyWith(position: localPosition);
                       final index = widget.canvasWidgets.indexWhere((w) => w.id == widgetData.id);
-                      if(index != -1) {
+                      if (index != -1) {
                         final updatedWidgets = [...widget.canvasWidgets];
                         updatedWidgets[index] = updatedData;
                         widget.onWidgetsUpdated(updatedWidgets);

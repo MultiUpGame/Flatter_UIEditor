@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_fancy_tree_view2/flutter_fancy_tree_view2.dart';
 import 'package:myapp/editor/canvas_widget_data.dart';
 
-typedef OnWidgetMoved = void Function(String draggedItemId, String targetItemId);
+typedef OnWidgetMoved = void Function(String draggedItemId, String? targetItemId);
 
 class WidgetTreeView extends StatefulWidget {
   final List<CanvasWidgetData> widgets;
@@ -51,36 +51,42 @@ class _WidgetTreeViewState extends State<WidgetTreeView> {
 
   @override
   Widget build(BuildContext context) {
-    return TreeView<CanvasWidgetData>(
-      key: ValueKey(widget.widgets.hashCode),
-      treeController: _treeController,
-      nodeBuilder: (BuildContext context, TreeEntry<CanvasWidgetData> entry) {
-        final widgetData = entry.node;
-        final isSelected = widget.selectedId == widgetData.id;
+    return DragTarget<CanvasWidgetData>(
+        builder: (context, candidateData, rejectedData) {
+            return TreeView<CanvasWidgetData>(
+              key: ValueKey(widget.widgets.hashCode),
+              treeController: _treeController,
+              nodeBuilder: (BuildContext context, TreeEntry<CanvasWidgetData> entry) {
+                final widgetData = entry.node;
+                final isSelected = widget.selectedId == widgetData.id;
 
-        return TreeIndentation(
-          entry: entry,
-          // Зменшено відступ для компактності
-          guide: const ConnectingLinesGuide(indent: 32),
-          child: DragTarget<CanvasWidgetData>(
-            builder: (context, candidateData, rejectedData) {
-              return Draggable<CanvasWidgetData>(
-                data: widgetData,
-                feedback: Material(
-                  elevation: 4.0,
-                  child: Opacity(opacity: 0.8, child: _buildNodeContent(widgetData, isSelected, entry)),
-                ),
-                childWhenDragging: Opacity(opacity: 0.5, child: _buildNodeContent(widgetData, isSelected, entry)),
-                child: _buildNodeContent(widgetData, isSelected, entry),
-              );
-            },
-            onWillAcceptWithDetails: (details) => details.data.id != widgetData.id,
-            onAcceptWithDetails: (details) {
-              widget.onWidgetMoved(details.data.id, widgetData.id);
-            },
-          ),
-        );
-      },
+                return TreeIndentation(
+                  entry: entry,
+                  guide: const ConnectingLinesGuide(indent: 32),
+                  child: DragTarget<CanvasWidgetData>(
+                    builder: (context, candidateData, rejectedData) {
+                      return Draggable<CanvasWidgetData>(
+                        data: widgetData,
+                        feedback: Material(
+                          elevation: 4.0,
+                          child: Opacity(opacity: 0.8, child: _buildNodeContent(widgetData, isSelected, entry)),
+                        ),
+                        childWhenDragging: Opacity(opacity: 0.5, child: _buildNodeContent(widgetData, isSelected, entry)),
+                        child: _buildNodeContent(widgetData, isSelected, entry),
+                      );
+                    },
+                    onWillAcceptWithDetails: (details) => details.data.id != widgetData.id,
+                    onAcceptWithDetails: (details) {
+                      widget.onWidgetMoved(details.data.id, widgetData.id);
+                    },
+                  ),
+                );
+              },
+            );
+        },
+        onAcceptWithDetails: (details) {
+            widget.onWidgetMoved(details.data.id, null);
+        },
     );
   }
 
@@ -88,7 +94,6 @@ class _WidgetTreeViewState extends State<WidgetTreeView> {
     return InkWell(
       onTap: () => widget.onSelected(widgetData.id),
       child: Container(
-        // Зменшено вертикальні відступи
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
           color: isSelected ? Colors.blue[100] : Colors.transparent,
@@ -96,9 +101,8 @@ class _WidgetTreeViewState extends State<WidgetTreeView> {
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center, // Центруємо елементи по вертикалі
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Ключова зміна: SizedBox + Center, щоб уникнути сплющування
             SizedBox(
               width: 24,
               height: 24,
@@ -114,7 +118,6 @@ class _WidgetTreeViewState extends State<WidgetTreeView> {
             ),
             _getWidgetIcon(widgetData.widget),
             const SizedBox(width: 4),
-            // Зменшено розмір шрифту
             Text(
               widgetData.widget.runtimeType.toString(),
               style: const TextStyle(fontSize: 10, height: 1),
@@ -126,7 +129,7 @@ class _WidgetTreeViewState extends State<WidgetTreeView> {
   }
 
   Icon _getWidgetIcon(Widget widget) {
-    const double iconSize = 12.0; // Зменшено розмір іконок
+    const double iconSize = 12.0; 
     switch (widget) {
       case Container _:
         return const Icon(Icons.check_box_outline_blank, size: iconSize);
